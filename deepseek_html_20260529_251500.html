@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>多句子排序工坊 | 单词连句游戏 (教师编辑/云端导出导入)</title>
+    <!-- QRCode.js 生成二维码 -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        /* 工具栏 */
+        .toolbar {
+            background: white;
+            border-radius: 60px;
+            padding: 12px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .logo {
+            font-weight: bold;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .save-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .save-group input {
+            padding: 8px 16px;
+            border-radius: 40px;
+            border: 1px solid #cbd5e1;
+        }
+        button {
+            background: #3b82f6;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+        button:hover { background: #2563eb; transform: scale(0.97);}
+        button.warning { background: #f97316; }
+        button.secondary { background: #64748b; }
+        button.success { background: #10b981; }
+        .load-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        select {
+            padding: 8px 12px;
+            border-radius: 40px;
+            border: 1px solid #cbd5e1;
+        }
+        .share-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #f1f5f9;
+            border-radius: 40px;
+            padding: 5px 16px;
+        }
+        /* 多句子区域 */
+        .sentences-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            margin-bottom: 30px;
+        }
+        .sentence-card {
+            background: rgba(255,255,240,0.95);
+            border-radius: 48px;
+            padding: 20px;
+            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+            border: 1px solid #fde047;
+        }
+        .sentence-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #facc15;
+            padding-bottom: 8px;
+        }
+        .sentence-index {
+            font-weight: bold;
+            background: #facc15;
+            padding: 4px 16px;
+            border-radius: 40px;
+            color: #422006;
+        }
+        .sentence-status {
+            font-size: 0.8rem;
+            background: #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 30px;
+        }
+        .status-correct {
+            background: #22c55e;
+            color: white;
+        }
+        .words-bank-mini {
+            background: #f8fafc;
+            border-radius: 40px;
+            padding: 14px;
+            margin-bottom: 15px;
+            min-height: 90px;
+        }
+        .bank-title-mini {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        .card-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .word-card {
+            background: linear-gradient(145deg, #ffffff, #eef2ff);
+            border-radius: 60px;
+            padding: 8px 20px;
+            font-weight: 600;
+            color: #0f172a;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #cbd5e1;
+            transition: 0.05s linear;
+            user-select: none;
+            font-size: 1rem;
+        }
+        .word-card:active { transform: scale(0.96);}
+        .sentence-area-mini {
+            background: #fffbeb;
+            border-radius: 40px;
+            padding: 14px;
+            border: 1px dashed #facc15;
+        }
+        .answer-slots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            min-height: 70px;
+        }
+        .slot-card {
+            background: #fde047;
+            border-radius: 60px;
+            padding: 8px 20px;
+            font-weight: bold;
+            color: #422006;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .empty-slot {
+            background: #e2e8f0;
+            border-radius: 60px;
+            padding: 8px 20px;
+            color: #475569;
+            font-style: italic;
+            font-size: 0.85rem;
+        }
+        .check-btn-mini {
+            margin-top: 12px;
+            background: #8b5cf6;
+            font-size: 0.75rem;
+            padding: 6px 14px;
+        }
+        .btn-group-mini {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 12px;
+        }
+        /* 教师编辑区 */
+        .teacher-editor {
+            background: #eef2ff;
+            border-radius: 48px;
+            padding: 24px;
+            margin-top: 20px;
+        }
+        .teacher-editor h3 {
+            margin-top: 0;
+            color: #1e40af;
+        }
+        .sentences-editor {
+            width: 100%;
+            font-family: monospace;
+            padding: 15px;
+            border-radius: 32px;
+            border: 1px solid #94a3b8;
+            font-size: 1rem;
+            resize: vertical;
+        }
+        .help-text {
+            font-size: 0.8rem;
+            color: #334155;
+            margin-top: 8px;
+        }
+        .global-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .message-bar {
+            background: #0f172a;
+            color: white;
+            padding: 10px;
+            border-radius: 60px;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        footer {
+            text-align: center;
+            color: #94a3b8;
+            margin-top: 25px;
+            font-size: 0.75rem;
+        }
+        /* 二维码弹窗 */
+        .modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+        }
+        .qr-card {
+            background: white;
+            padding: 20px;
+            border-radius: 40px;
+            text-align: center;
+            max-width: 90vw;
+        }
+        .import-export {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            justify-content: center;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 16px;
+        }
+        @media (max-width: 800px) {
+            .toolbar { flex-direction: column; align-items: stretch; border-radius: 32px; }
+            .word-card, .slot-card { padding: 6px 14px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="toolbar">
+        <div class="logo">📚 多句子排序工坊 (教师可编辑5~10句)</div>
+        <div class="save-group">
+            <input type="text" id="globalGameName" placeholder="游戏名称, e.g., 初级句子包" value="我的句子闯关">
+            <button id="saveLocalBtn">💾 保存到本地/云端(浏览器)</button>
+        </div>
+        <div class="load-group">
+            <select id="gameSelect"><option value="">-- 加载已保存的游戏 --</option></select>
+            <button id="loadGameBtn" class="secondary">📂 加载</button>
+        </div>
+        <div class="share-group">
+            <button id="shareLinkBtn">🔗 复制分享链接</button>
+            <button id="qrBtn">📲 二维码</button>
+        </div>
+    </div>
+    <div id="globalMessage" class="message-bar">✨ 点击单词进行排序，每个句子独立挑战 ✨</div>
+    
+    <!-- 动态句子列表容器 -->
+    <div id="sentencesContainer" class="sentences-panel"></div>
+    
+    <!-- 教师编辑区 -->
+    <div class="teacher-editor">
+        <h3>✏️ 教师编辑模式 (一次编辑 5~10个句子，单词用空格分隔)</h3>
+        <textarea id="sentencesRawInput" rows="6" class="sentences-editor" placeholder="请输入句子，每个句子占一行，单词用空格分隔。例如：&#10;The cat sits on the mat&#10;I like to play football&#10;She is a great teacher&#10;We will go to the park tomorrow"></textarea>
+        <div class="help-text">💡 提示：每行一个句子，系统自动拆分单词。支持5~10个句子，推荐5-7句效果最佳。点击「应用句子」后重置所有卡片。</div>
+        <div class="global-buttons">
+            <button id="applySentencesBtn">🎯 应用句子 & 重置游戏</button>
+            <button id="resetAllBtn" class="warning">🔄 重置所有句子排序</button>
+            <button id="checkAllBtn" class="secondary">✅ 检查所有句子顺序</button>
+        </div>
+        <div class="import-export">
+            <button id="exportDataBtn" class="success">📤 导出游戏数据 (分享给学生)</button>
+            <button id="importDataBtn" class="secondary">📥 导入游戏数据 (学生接收)</button>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;">
+        </div>
+        <div class="help-text">⭐ 教师导出数据文件发给学生 → 学生点击「导入游戏数据」即可开始练习，无需网络数据库！</div>
+    </div>
+    <footer>⭐ 教师可自由编辑句子 → 保存到浏览器/导出数据 → 学生扫码或导入数据即可练习。</footer>
+</div>
+
+<div id="qrModal" class="modal">
+    <div class="qr-card">
+        <h3>📱 扫码/链接分享</h3>
+        <div id="qrcodeDiv"></div>
+        <input type="text" id="shareUrlInput" readonly style="width:100%; margin-top:12px; padding:8px; border-radius:40px; border:1px solid #ccc;">
+        <button id="copyUrlBtn" style="margin-top:8px;">复制链接</button>
+        <button id="closeModalBtn" style="margin-top:8px; background:#64748b;">关闭</button>
+        <div style="font-size:12px; margin-top:12px;">* 学生打开链接后，若无法加载游戏，请使用「导入数据」功能</div>
+    </div>
+</div>
+
+<script>
+    // ---------------------------- 全局状态 (完全本地存储 + 导出/导入机制，无第三方Firebase错误) ---------------------------------
+    let currentGameId = null;                // 存储key (localStorage)
+    let sentencesData = [];                  // 存储每个句子的对象: { originalWords: [], bankWords: [], sentenceWords: [], isCorrect: false }
+    
+    // DOM
+    const sentencesContainer = document.getElementById('sentencesContainer');
+    const sentencesRawInput = document.getElementById('sentencesRawInput');
+    const applySentencesBtn = document.getElementById('applySentencesBtn');
+    const saveLocalBtn = document.getElementById('saveLocalBtn');
+    const gameSelect = document.getElementById('gameSelect');
+    const loadGameBtn = document.getElementById('loadGameBtn');
+    const shareLinkBtn = document.getElementById('shareLinkBtn');
+    const qrBtn = document.getElementById('qrBtn');
+    const resetAllBtn = document.getElementById('resetAllBtn');
+    const checkAllBtn = document.getElementById('checkAllBtn');
+    const globalGameName = document.getElementById('globalGameName');
+    const globalMessageDiv = document.getElementById('globalMessage');
+    const qrModal = document.getElementById('qrModal');
+    const qrcodeDiv = document.getElementById('qrcodeDiv');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const exportDataBtn = document.getElementById('exportDataBtn');
+    const importDataBtn = document.getElementById('importDataBtn');
+    const importFileInput = document.getElementById('importFileInput');
+    const shareUrlInput = document.getElementById('shareUrlInput');
+    const copyUrlBtn = document.getElementById('copyUrlBtn');
+    
+    // 辅助函数: 显示消息
+    function setMessage(msg, isError = false) {
+        globalMessageDiv.innerText = msg;
+        globalMessageDiv.style.backgroundColor = isError ? '#b91c1c' : '#0f172a';
+        setTimeout(() => {
+            if (globalMessageDiv.innerText === msg) {
+                if(!isError && globalMessageDiv.innerText !== '✅ 导入成功！') 
+                    globalMessageDiv.innerText = '✨ 点击单词进行排序，每个句子独立挑战 ✨';
+                else if(isError) globalMessageDiv.style.backgroundColor = '#b91c1c';
+                else globalMessageDiv.style.backgroundColor = '#0f172a';
+            }
+        }, 2800);
+    }
+    
+    // 打乱数组
+    function shuffleArray(arr) {
+        let a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+    
+    // 根据原始句子数组构建初始数据 (bank打乱, sentence为空)
+    function buildSentencesDataFromRaw(originalSentencesArray) {
+        if (originalSentencesArray.length < 1) return [];
+        if (originalSentencesArray.length > 12) {
+            alert("句子数量过多，建议5~10句，将只保留前10句");
+            originalSentencesArray = originalSentencesArray.slice(0,10);
+        }
+        return originalSentencesArray.map(wordsArray => {
+            const shuffledBank = shuffleArray(wordsArray);
+            return {
+                originalWords: [...wordsArray],
+                bankWords: shuffledBank,
+                sentenceWords: [],
+                isCorrect: false
+            };
+        });
+    }
+    
+    // 渲染全部句子
+    function renderAllSentences() {
+        if (!sentencesContainer) return;
+        sentencesContainer.innerHTML = '';
+        sentencesData.forEach((sentence, idx) => {
+            const card = document.createElement('div');
+            card.className = 'sentence-card';
+            card.dataset.index = idx;
+            // 头部
+            const header = document.createElement('div');
+            header.className = 'sentence-header';
+            const idxSpan = document.createElement('span');
+            idxSpan.className = 'sentence-index';
+            idxSpan.innerText = `句子 ${idx+1}`;
+            const statusSpan = document.createElement('span');
+            statusSpan.className = `sentence-status ${sentence.isCorrect ? 'status-correct' : ''}`;
+            statusSpan.innerText = sentence.isCorrect ? '✓ 正确' : '⏳ 未完成';
+            header.appendChild(idxSpan);
+            header.appendChild(statusSpan);
+            // 单词库区
+            const bankDiv = document.createElement('div');
+            bankDiv.className = 'words-bank-mini';
+            const bankTitle = document.createElement('div');
+            bankTitle.className = 'bank-title-mini';
+            bankTitle.innerText = '📦 可拖动/点击单词';
+            const bankCards = document.createElement('div');
+            bankCards.className = 'card-list';
+            sentence.bankWords.forEach((word, wIdx) => {
+                const cardEl = createWordElement(word, 'bank', idx, wIdx);
+                bankCards.appendChild(cardEl);
+            });
+            bankDiv.appendChild(bankTitle);
+            bankDiv.appendChild(bankCards);
+            // 句子区
+            const sentenceDiv = document.createElement('div');
+            sentenceDiv.className = 'sentence-area-mini';
+            const sentenceTitle = document.createElement('div');
+            sentenceTitle.className = 'bank-title-mini';
+            sentenceTitle.innerText = '✏️ 你的句子顺序 (点击单词可移回)';
+            const slotsDiv = document.createElement('div');
+            slotsDiv.className = 'answer-slots';
+            if (sentence.sentenceWords.length === 0) {
+                const emptyHint = document.createElement('div');
+                emptyHint.className = 'empty-slot';
+                emptyHint.innerText = '✨ 点击上方单词，按正确顺序排列 ✨';
+                slotsDiv.appendChild(emptyHint);
+            } else {
+                sentence.sentenceWords.forEach((word, sIdx) => {
+                    const slotEl = createWordElement(word, 'slot', idx, sIdx);
+                    slotsDiv.appendChild(slotEl);
+                });
+            }
+            sentenceDiv.appendChild(sentenceTitle);
+            sentenceDiv.appendChild(slotsDiv);
+            // 单独检查按钮
+            const btnGroup = document.createElement('div');
+            btnGroup.className = 'btn-group-mini';
+            const checkSingleBtn = document.createElement('button');
+            checkSingleBtn.innerText = '🔍 检查本句';
+            checkSingleBtn.className = 'check-btn-mini';
+            checkSingleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                checkSingleSentence(idx);
+            });
+            const resetSingleBtn = document.createElement('button');
+            resetSingleBtn.innerText = '🔄 重置本句';
+            resetSingleBtn.className = 'check-btn-mini';
+            resetSingleBtn.style.backgroundColor = '#f97316';
+            resetSingleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                resetSingleSentence(idx);
+            });
+            btnGroup.appendChild(checkSingleBtn);
+            btnGroup.appendChild(resetSingleBtn);
+            sentenceDiv.appendChild(btnGroup);
+            
+            card.appendChild(header);
+            card.appendChild(bankDiv);
+            card.appendChild(sentenceDiv);
+            sentencesContainer.appendChild(card);
+        });
+    }
+    
+    // 创建单词卡片 (支持点击移动 + 拖拽排序)
+    function createWordElement(word, type, sentenceIdx, wordIdx) {
+        const div = document.createElement('div');
+        div.className = type === 'bank' ? 'word-card' : 'slot-card';
+        div.innerText = word;
+        div.setAttribute('data-type', type);
+        div.setAttribute('data-sentence', sentenceIdx);
+        div.setAttribute('data-word-idx', wordIdx);
+        div.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (type === 'bank') {
+                const wordObj = sentencesData[sentenceIdx].bankWords[wordIdx];
+                if (wordObj !== undefined) {
+                    sentencesData[sentenceIdx].bankWords.splice(wordIdx, 1);
+                    sentencesData[sentenceIdx].sentenceWords.push(wordObj);
+                    sentencesData[sentenceIdx].isCorrect = false;
+                    renderAllSentences();
+                    updateSentenceStatusUI(sentenceIdx);
+                    setMessage(`句子${sentenceIdx+1}: 单词已添加`, false);
+                }
+            } else if (type === 'slot') {
+                const wordObj = sentencesData[sentenceIdx].sentenceWords[wordIdx];
+                if (wordObj !== undefined) {
+                    sentencesData[sentenceIdx].sentenceWords.splice(wordIdx, 1);
+                    sentencesData[sentenceIdx].bankWords.push(wordObj);
+                    sentencesData[sentenceIdx].isCorrect = false;
+                    renderAllSentences();
+                    updateSentenceStatusUI(sentenceIdx);
+                    setMessage(`句子${sentenceIdx+1}: 单词已移回`, false);
+                }
+            }
+        });
+        // 拖拽支持
+        div.draggable = true;
+        div.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', JSON.stringify({ type, sentenceIdx, wordIdx, word }));
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        div.addEventListener('dragover', (e) => e.preventDefault());
+        div.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+            if (!dragData) return;
+            const targetType = type;
+            const targetSentenceIdx = sentenceIdx;
+            const targetWordIdx = wordIdx;
+            const srcType = dragData.type;
+            const srcSentence = dragData.sentenceIdx;
+            const srcWordIdxDrag = dragData.wordIdx;
+            if (srcSentence !== targetSentenceIdx) return;
+            const sentenceData = sentencesData[targetSentenceIdx];
+            if (srcType === 'bank' && targetType === 'bank') {
+                if (srcWordIdxDrag !== targetWordIdx && srcWordIdxDrag < sentenceData.bankWords.length && targetWordIdx < sentenceData.bankWords.length) {
+                    const temp = sentenceData.bankWords[srcWordIdxDrag];
+                    sentenceData.bankWords[srcWordIdxDrag] = sentenceData.bankWords[targetWordIdx];
+                    sentenceData.bankWords[targetWordIdx] = temp;
+                    renderAllSentences();
+                }
+            } else if (srcType === 'slot' && targetType === 'slot') {
+                if (srcWordIdxDrag !== targetWordIdx && srcWordIdxDrag < sentenceData.sentenceWords.length && targetWordIdx < sentenceData.sentenceWords.length) {
+                    const temp = sentenceData.sentenceWords[srcWordIdxDrag];
+                    sentenceData.sentenceWords[srcWordIdxDrag] = sentenceData.sentenceWords[targetWordIdx];
+                    sentenceData.sentenceWords[targetWordIdx] = temp;
+                    sentencesData[targetSentenceIdx].isCorrect = false;
+                    renderAllSentences();
+                }
+            } else if (srcType === 'bank' && targetType === 'slot') {
+                const movedWord = sentenceData.bankWords[srcWordIdxDrag];
+                if (movedWord) {
+                    sentenceData.bankWords.splice(srcWordIdxDrag, 1);
+                    sentenceData.sentenceWords.splice(targetWordIdx, 0, movedWord);
+                    sentencesData[targetSentenceIdx].isCorrect = false;
+                    renderAllSentences();
+                }
+            } else if (srcType === 'slot' && targetType === 'bank') {
+                const movedWord = sentenceData.sentenceWords[srcWordIdxDrag];
+                if (movedWord) {
+                    sentenceData.sentenceWords.splice(srcWordIdxDrag, 1);
+                    sentenceData.bankWords.splice(targetWordIdx, 0, movedWord);
+                    sentencesData[targetSentenceIdx].isCorrect = false;
+                    renderAllSentences();
+                }
+            }
+            updateSentenceStatusUI(targetSentenceIdx);
+        });
+        return div;
+    }
+    
+    function updateSentenceStatusUI(sentenceIdx) {
+        const sent = sentencesData[sentenceIdx];
+        const isCurrCorrect = (sent.sentenceWords.length === sent.originalWords.length && 
+            sent.sentenceWords.every((w, i) => w === sent.originalWords[i]));
+        sent.isCorrect = isCurrCorrect;
+        renderAllSentences();
+    }
+    
+    function checkSingleSentence(idx) {
+        const sent = sentencesData[idx];
+        if (sent.sentenceWords.length !== sent.originalWords.length) {
+            setMessage(`❌ 句子${idx+1} 单词数量不完整！需要 ${sent.originalWords.length} 个单词。`, true);
+            return;
+        }
+        let correct = true;
+        for (let i=0; i<sent.originalWords.length; i++) {
+            if (sent.sentenceWords[i] !== sent.originalWords[i]) { correct = false; break; }
+        }
+        if (correct) {
+            sent.isCorrect = true;
+            setMessage(`🎉 句子${idx+1} 完全正确！ 🎉`, false);
+        } else {
+            sent.isCorrect = false;
+            setMessage(`⚠️ 句子${idx+1} 顺序错误，再调整一下~`, true);
+        }
+        renderAllSentences();
+    }
+    
+    function resetSingleSentence(idx) {
+        const sent = sentencesData[idx];
+        const allOriginal = [...sent.originalWords];
+        sent.bankWords = shuffleArray(allOriginal);
+        sent.sentenceWords = [];
+        sent.isCorrect = false;
+        renderAllSentences();
+        setMessage(`句子${idx+1} 已重置，顺序打乱`, false);
+    }
+    
+    function resetAllSentences() {
+        sentencesData.forEach((sent, i) => {
+            sent.bankWords = shuffleArray([...sent.originalWords]);
+            sent.sentenceWords = [];
+            sent.isCorrect = false;
+        });
+        renderAllSentences();
+        setMessage("所有句子已重置，单词顺序已打乱！", false);
+    }
+    
+    function checkAllSentences() {
+        let allCorrectCount = 0;
+        sentencesData.forEach((sent, idx) => {
+            const correct = (sent.sentenceWords.length === sent.originalWords.length && 
+                sent.sentenceWords.every((w,i)=> w === sent.originalWords[i]));
+            sent.isCorrect = correct;
+            if(correct) allCorrectCount++;
+        });
+        renderAllSentences();
+        if(allCorrectCount === sentencesData.length) {
+            setMessage(`🏆 完美！所有 ${sentencesData.length} 个句子全部正确！ 🏆`, false);
+        } else {
+            setMessage(`📝 已完成 ${allCorrectCount}/${sentencesData.length} 个正确句子，继续加油！`, false);
+        }
+    }
+    
+    // 教师应用句子
+    function applyTeacherSentences() {
+        let rawText = sentencesRawInput.value;
+        let lines = rawText.split(/\r?\n/);
+        let sentenceWordArrays = [];
+        for (let line of lines) {
+            line = line.trim();
+            if (line === "") continue;
+            let words = line.split(/\s+/);
+            if (words.length > 0) sentenceWordArrays.push(words);
+        }
+        if (sentenceWordArrays.length < 1) {
+            alert("请至少输入一个完整的句子！");
+            return;
+        }
+        if (sentenceWordArrays.length > 12) {
+            if(!confirm("句子数量超过10个，将只保留前10个，确定吗？")) return;
+            sentenceWordArrays = sentenceWordArrays.slice(0,10);
+        }
+        sentencesData = buildSentencesDataFromRaw(sentenceWordArrays);
+        renderAllSentences();
+        setMessage(`已加载 ${sentencesData.length} 个句子，开始排序练习！`, false);
+        let displayText = sentenceWordArrays.map(arr => arr.join(' ')).join('\n');
+        sentencesRawInput.value = displayText;
+        saveToLocalStorageAuto(); // 自动保存当前状态到默认槽位
+        refreshGameList();
+    }
+    
+    // 保存到localStorage (基于currentGameId或新名字)
+    function saveToLocalStorageAuto() {
+        let gameName = globalGameName.value.trim();
+        if (!gameName) gameName = "未命名_" + Date.now();
+        if (!currentGameId) currentGameId = "game_" + Date.now() + "_" + Math.random().toString(36).substr(2,6);
+        const gameData = {
+            name: gameName,
+            sentences: sentencesData.map(s => ({ originalWords: s.originalWords })),
+            updatedAt: Date.now()
+        };
+        let allGames = JSON.parse(localStorage.getItem('multiSentenceGames_local') || '{}');
+        allGames[currentGameId] = gameData;
+        localStorage.setItem('multiSentenceGames_local', JSON.stringify(allGames));
+        localStorage.setItem('lastMultiGameId', currentGameId);
+        setMessage(`✅ 游戏“${gameName}”已保存到浏览器！`, false);
+        refreshGameList();
+    }
+    
+    function loadGameById(gameKey) {
+        const allGames = JSON.parse(localStorage.getItem('multiSentenceGames_local') || '{}');
+        const data = allGames[gameKey];
+        if (data && data.sentences && data.sentences.length) {
+            const loadedSentenceArrays = data.sentences.map(s => s.originalWords);
+            sentencesData = buildSentencesDataFromRaw(loadedSentenceArrays);
+            currentGameId = gameKey;
+            globalGameName.value = data.name || gameKey;
+            renderAllSentences();
+            setMessage(`加载游戏“${data.name}”, 共${sentencesData.length}个句子`, false);
+            sentencesRawInput.value = loadedSentenceArrays.map(arr => arr.join(' ')).join('\n');
+        } else alert("未找到游戏数据");
+    }
+    
+    function refreshGameList() {
+        const allGames = JSON.parse(localStorage.getItem('multiSentenceGames_local') || '{}');
+        gameSelect.innerHTML = '<option value="">-- 选择已保存的游戏 --</option>';
+        for (let key in allGames) {
+            let opt = document.createElement('option');
+            opt.value = key;
+            opt.innerText = allGames[key].name + " (" + key.slice(0,8)+")";
+            gameSelect.appendChild(opt);
+        }
+    }
+    
+    // 导出数据为JSON文件
+    function exportGameData() {
+        if (!sentencesData.length) { alert("还没有句子数据，请先编辑并应用句子。"); return; }
+        const exportObj = {
+            version: "1.0",
+            gameName: globalGameName.value.trim(),
+            sentences: sentencesData.map(s => ({ originalWords: s.originalWords })),
+            exportTime: new Date().toISOString()
+        };
+        const dataStr = JSON.stringify(exportObj, null, 2);
+        const blob = new Blob([dataStr], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sentence_game_${globalGameName.value.trim() || 'export'}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setMessage("导出成功！将文件发给学生，学生点击「导入游戏数据」即可", false);
+    }
+    
+    // 导入数据 (学生接收)
+    function importGameData(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (imported.sentences && imported.sentences.length) {
+                    const sentenceWordArrays = imported.sentences.map(s => s.originalWords);
+                    sentencesData = buildSentencesDataFromRaw(sentenceWordArrays);
+                    if (imported.gameName) globalGameName.value = imported.gameName;
+                    renderAllSentences();
+                    sentencesRawInput.value = sentenceWordArrays.map(arr => arr.join(' ')).join('\n');
+                    setMessage(`✅ 导入成功！共 ${sentencesData.length} 个句子，开始练习吧！`, false);
+                    currentGameId = null; // 新导入可重新保存
+                    refreshGameList();
+                } else {
+                    alert("文件格式不正确，请确保是导出的游戏数据");
+                }
+            } catch(err) { alert("解析失败，文件损坏"); }
+        };
+        reader.readAsText(file);
+    }
+    
+    // 分享链接 (基于localStorage的ID，并且同时将当前数据序列化到URL hash中作为备用)
+    function getShareUrl() {
+        if (!sentencesData.length) { alert("请先编辑并应用句子！"); return null; }
+        // 先保存当前数据到 localStorage 得到一个ID
+        saveToLocalStorageAuto();
+        const url = new URL(window.location.href);
+        url.searchParams.set('gameId', currentGameId);
+        // 同时将数据压缩进hash? 为了离线可靠，我们主要使用gameId，但是也把数据明文加入hash让学生一键导入？为了保证无网可用，同时提供data参数。
+        const exportObj = {
+            v: 1,
+            name: globalGameName.value,
+            sentences: sentencesData.map(s => ({ original: s.originalWords }))
+        };
+        const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(exportObj)))).slice(0, 800); // 限制长度
+        url.searchParams.set('backup', encoded);
+        return url.toString();
+    }
+    
+    function shareLink() { const link = getShareUrl(); if(link) { navigator.clipboard.writeText(link); alert("链接已复制！学生打开后若无法加载可点击「导入数据」从备份恢复"); } }
+    function showQR() { 
+        const link = getShareUrl(); 
+        if(link) { 
+            qrcodeDiv.innerHTML = ""; 
+            new QRCode(qrcodeDiv, { text: link, width: 200, height: 200 });
+            shareUrlInput.value = link;
+            qrModal.style.visibility = "visible"; 
+        } 
+    }
+    
+    // 初始化: 检查URL参数自动加载
+    function initFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const gameId = params.get('gameId');
+        const backupData = params.get('backup');
+        if (gameId) {
+            loadGameById(gameId);
+        } else if (backupData) {
+            try {
+                const jsonStr = decodeURIComponent(escape(atob(backupData)));
+                const data = JSON.parse(jsonStr);
+                if (data.sentences) {
+                    const sentenceArrays = data.sentences.map(s => s.original);
+                    sentencesData = buildSentencesDataFromRaw(sentenceArrays);
+                    if (data.name) globalGameName.value = data.name;
+                    renderAllSentences();
+                    sentencesRawInput.value = sentenceArrays.map(arr => arr.join(' ')).join('\n');
+                    setMessage(`从分享链接恢复 ${sentencesData.length} 个句子`, false);
+                } else throw new Error();
+            } catch(e) { console.log("备份恢复失败"); }
+        }
+        if (!sentencesData.length) {
+            const demo = [["The","cat","is","sleeping"],["I","love","playing","games"],["She","has","a","beautiful","smile"],["We","will","travel","tomorrow"],["Learning","makes","us","smart"]];
+            sentencesData = buildSentencesDataFromRaw(demo);
+            renderAllSentences();
+            sentencesRawInput.value = demo.map(arr=>arr.join(' ')).join('\n');
+        }
+        refreshGameList();
+    }
+    
+    // 事件绑定
+    applySentencesBtn.addEventListener('click', applyTeacherSentences);
+    saveLocalBtn.addEventListener('click', saveToLocalStorageAuto);
+    loadGameBtn.addEventListener('click', () => { if(gameSelect.value) loadGameById(gameSelect.value); });
+    shareLinkBtn.addEventListener('click', shareLink);
+    qrBtn.addEventListener('click', showQR);
+    closeModalBtn.addEventListener('click', () => { qrModal.style.visibility = "hidden"; });
+    copyUrlBtn.addEventListener('click', () => { if(shareUrlInput.value) { navigator.clipboard.writeText(shareUrlInput.value); alert("链接已复制"); } });
+    resetAllBtn.addEventListener('click', resetAllSentences);
+    checkAllBtn.addEventListener('click', checkAllSentences);
+    exportDataBtn.addEventListener('click', exportGameData);
+    importDataBtn.addEventListener('click', () => { importFileInput.click(); });
+    importFileInput.addEventListener('change', (e) => { if(e.target.files.length) importGameData(e.target.files[0]); e.target.value=''; });
+    
+    initFromUrl();
+</script>
+</body>
+</html>
